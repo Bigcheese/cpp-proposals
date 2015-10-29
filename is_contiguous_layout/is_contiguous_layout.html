@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ASCII">
+<style type="text/css">
+body { color: #000000; background-color: #FFFFFF; }
+del { text-decoration: line-through; color: #8B0040; }
+ins { text-decoration: underline; color: #005100; }
+
+p.example { margin-left: 2em; }
+pre.example { margin-left: 2em; }
+div.example { margin-left: 2em; }
+
+code.extract { background-color: #F5F6A2; }
+pre.extract { margin-left: 2em; background-color: #F5F6A2;
+  border: 1px solid #E1E28E; }
+
+p.function { }
+.attribute { margin-left: 2em; }
+.attribute dt { float: left; font-style: italic;
+  padding-right: 1ex; }
+.attribute dd { margin-left: 0em; }
+
+blockquote.std { color: #000000; background-color: #F1F1F1;
+  border: 1px solid #D1D1D1;
+  padding-left: 0.5em; padding-right: 0.5em; }
+blockquote.stddel { text-decoration: line-through;
+  color: #000000; background-color: #FFEBFF;
+  border: 1px solid #ECD7EC;
+  padding-left: 0.5empadding-right: 0.5em; ; }
+
+blockquote.stdins { text-decoration: underline;
+  color: #000000; background-color: #C8FFC8;
+  border: 1px solid #B3EBB3; padding: 0.5em; }
+
+table { border: 1px solid black; border-spacing: 0px;
+  margin-left: auto; margin-right: auto; }
+th { text-align: left; vertical-align: top;
+  padding-left: 0.8em; border: none; }
+td { text-align: left; vertical-align: top;
+  padding-left: 0.8em; border: none; }
+</style>
+<title>is_contiguous_layout</title>
+</head>
+
+<body>
+
+<h1>is_contiguous_layout</h1>
+<p>ISO/IEC JTC1 SC22 WG21 D???? = ??-???? - 2015-??-??
+</p>
+<address>Michael Spencer, bigcheesegs@gmail.com</address>
+
+<section>
+<h2 id="intro">Introduction</h2>
+<p>This paper proposes adding a new compiler backed type trait to assist in
+hashing.
+</p>
+</section>
+
+<section>
+<h2 id="motive">Motivation</h2>
+<p><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0029r0.html">
+P0029</a> proposes using the user defined trait
+<code>is_uniquely_represented</code> to assert that a type can be hashed by
+hashing its object representation. It states that
+<code>is_uniquely_represented</code> can only be true for types which have no
+padding, but intentionally avoids adding a type trait to check that to keep the
+proposal a "pure library" proposal.
+</p>
+
+<p>Without this trait, users must manually verify that the <code>sizeof</code>
+each non static data member adds up to the <code>sizeof</code> the entire type.
+This also precludes bit-field types and potentially gives the wrong answer for
+unions.
+</p>
+</section>
+
+<section>
+<h2 id="std">Proposed Wording</h2>
+<p>Proposed wording changes to the standard.
+</p>
+
+<h3>3.9 Types [basic.types]</h3>
+<p>Add a new paragraph.
+</p>
+<blockquote class="stdins">
+<p>A <var>contiguous-layout</var> type is a <var>standard-layout</var> type for
+which all bits in the object representation participate in the value
+representation (3.9).
+</p>
+</blockquote>
+
+<h3>20.9.2 Header <code>&lt;type_traits&gt;</code> synopsis [meta.type.synop]</h3>
+<p>Add to synopsis.
+</p>
+<blockquote class="stdins">
+<code>template &lt;class T&gt; struct is_contiguous_layout;</code>
+</blockquote>
+
+<h3>20.9.4.3 Type properties [meta.unary.prop]</h3>
+<p>Add to table 49 - Type property predicates.
+</p>
+<blockquote class="stdins">
+<table is="cxx-table">
+  <thead>
+    <tr>
+      <th>Template</th>
+      <th>Condition</th>
+      <th>Preconditions</th>
+    </tr>
+  </thead>
+  <tr>
+    <td><code>template &lt;class T&gt; struct is_contiguous_layout;</code></td>
+    <td>T is a contiguous-layout type (3.9)</td>
+    <td>T shall be a complete type, (possibly cv-qualified) void, or an array of unknown bound.</td>
+  </tr>
+</table>
+</blockquote>
+</section>
+
+<section>
+<h2 id="ref">References</h2>
+<ul>
+<li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0029r0.html">
+P0029</a> - A Unified Proposal for Composable Hashing, Geoff Romer, Chandler Carruth</li>
+<li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3333.html">
+N3333</a> - Hashing User-Defined Types in C++1y, Jeffrey Yasskin, Chandler Carruth</li>
+</ul>
+</section>
+
+</body>
+</html>
