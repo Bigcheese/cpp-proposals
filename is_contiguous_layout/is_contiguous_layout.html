@@ -127,6 +127,20 @@ writing hash functions for user defined types.
 </section>
 
 <section>
+<h2 id="usage">Usage</h2>
+<pre><code class="highlight"><span class="k">struct</span> <span class="n">Trivial</span> <span class="p">{</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">Data</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="n">Len</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">namespace</span> <span class="n">std</span> <span class="p">{</span>
+  <span class="k">template</span> <span class="o">&lt;&gt;</span>
+  <span class="k">struct</span> <span class="n">is_uniquely_represented</span><span class="o">&lt;</span><span class="n">Trivial</span><span class="o">&gt;</span>
+    <span class="o">:</span> <span class="n">is_contiguous_layout</span><span class="o">&lt;</span><span class="n">Trivial</span><span class="o">&gt;</span> <span class="p">{};</span>
+<span class="p">}</span></code></pre>
+</section>
+
+<section>
 <h2 id="motive">Motivation</h2>
 <p><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0029r0.html">
 P0029</a> proposes using the user defined trait
