@@ -46,15 +46,17 @@ td { text-align: left; vertical-align: top;
 <body>
 
 <h1>is_contiguous_layout</h1>
-<p>ISO/IEC JTC1 SC22 WG21 D???? = ??-???? - 2015-??-??
+<p>ISO/IEC JTC1 SC22 WG21 D???? = ??-???? - 2016-02-12
 </p>
 <address>Michael Spencer, bigcheesegs@gmail.com</address>
 
 <section>
 <h2 id="intro">Introduction</h2>
 <p>This paper proposes adding a new compiler backed type trait to assist in
-hashing.
+writing hash functions for user defined types.
 </p>
+
+<code>template &lt;class T&gt; struct is_contiguous_layout;</code>
 </section>
 
 <section>
@@ -68,11 +70,83 @@ padding, but intentionally avoids adding a type trait to check that to keep the
 proposal a "pure library" proposal.
 </p>
 
-<p>Without this trait, users must manually verify that the <code>sizeof</code>
-each non static data member adds up to the <code>sizeof</code> the entire type.
-This also precludes bit-field types and potentially gives the wrong answer for
-unions.
+<p>It is not possible for users to portably assert that a type has the
+<code>is_uniquely_represented</code> trait without compiler assistance.</p>
+
+<h3 id="motive-trivial">Trivial Example</h3>
+<pre><code>struct Trivial {
+  char *Data;
+  unsigned Len;
+};
+</code></pre>
+
+<p>The contiguous hashibility of this type depends on:
+
+<ol>
+<li>The <code>sizeof</code> <code>Data</code>, <code>Len</code> and
+<code>Trivial</code>. <code>sizeof(Data) + sizeof(Len)</code> must equal
+<code>sizeof(Trivial)</code>.</li>
+<li>The implementation defined mapping between pointer values and their object
+representation.</li>
+<li>The implementation defined mapping between unsigned values and their object
+representation.</li>
+</ol></p>
+
+<p>1 can be checked via a static assert, however this is verbose.</p>
+
+<p>2 and 3 can only be checked by reading the documentation for your
+implementation, thus limiting portability. Although no implementation I know of
+fails either of these.</p>
+
+<h3 id="motive-bitfields">Bitfields</h3>
+<pre><code>struct Bitfields {
+  unsigned char A : 4;
+  unsigned char B : 4;
+  unsigned short C : 8;
+};
+</code></pre>
+
+<p>The contiguous hashibility of this type depends on how bitfields are
+implemented. And in practice is different between the Itanium ABI and Visual
+C++. This can also only be checked by taking a look at the docs.</p>
+</section>
+
+<section>
+<h2 id="sgfsesgesgsegsegsegsgsegsesgesegsegsegsegesg">Stuff</h2>
+<p>The proposed wording for this trait is: </p>
+<blockquote>
+<p>A <var>contiguous-layout</var> type is a <var>standard-layout</var> type for
+which all bits in the object representation participate in the value
+representation (3.9).
 </p>
+</blockquote>
+<p>This means that a standard-layout type is a contiguous-layout type unless
+there exists two object representation bit patterns of the type for which there
+exists no well defined program operating only on value types to observe the
+difference.</p>
+
+<h3 id="sgfsesgesgsegsegsegsgsegsesgesegsegsegsegesg-floats">Floats</h3>
+<p>Floating point values may compare equal even when they have different object
+representations. However this does not preclude them from having
+contiguous-layout types, as equality is not the only way to observe the
+difference between floating point values. The implementation may provide enough
+observation tools to observe the full state of the value.</p>
+
+<p>It is implementation defined if floating point types are contiguous-layout.
+</p>
+
+<h3 id="sgfsesgesgsegsegsegsgsegsesgesegsegsegsegesg-unions">Unions</h3>
+<p>Unions with members which are all the same size and are all contiguous-layout
+types are also obvious candidates for contiguous-layout types. However, unions
+with members of different sizes present a problem, as the existence of padding
+bytes depends on the runtime active member.</p>
+
+<p>For incompatible union members, implementations are allowed to omit copying
+the entire object representation of a union if it knows the active member. It is
+completely reasonable for an implementation to do this if a member was just
+assigned.</p>
+
+<p>It is implementation defined if union types are contiguous-layout.</p>
 </section>
 
 <section>
