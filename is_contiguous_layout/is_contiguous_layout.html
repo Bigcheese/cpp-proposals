@@ -119,11 +119,11 @@ Audience: EWG, LEWG<br />
 
 <section>
 <h2 id="intro">Introduction</h2>
-<p>This paper proposes adding a new compiler backed type trait to assist in
-writing hash functions for user defined types.
+<p>This paper proposes adding a new compiler backed type trait to enable
+portably hashing an object as a range of bytes.
 </p>
 
-<code>template &lt;class T&gt; struct is_contiguous_layout;</code>
+<code class="highlight"><span class="k">template</span> &lt;<span class="k">class</span> T&gt; <span class="k">struct</span> is_contiguous_layout;</code>
 </section>
 
 <section>
@@ -133,6 +133,7 @@ writing hash functions for user defined types.
   <span class="kt">unsigned</span> <span class="n">Len</span><span class="p">;</span>
 <span class="p">};</span>
 
+<span class="c1">// Assert that Trivial can be hashed as a range of bytes if it is contiguous layout.</span>
 <span class="k">namespace</span> <span class="n">std</span> <span class="p">{</span>
   <span class="k">template</span> <span class="o">&lt;&gt;</span>
   <span class="k">struct</span> <span class="n">is_uniquely_represented</span><span class="o">&lt;</span><span class="n">Trivial</span><span class="o">&gt;</span>
@@ -143,12 +144,12 @@ writing hash functions for user defined types.
 <section>
 <h2 id="motive">Motivation</h2>
 <p><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0029r0.html">
-P0029</a> proposes using the user defined trait
-<code>is_uniquely_represented</code> to assert that a type can be hashed by
-hashing its object representation. It states that
+P0029</a> proposes the user specialized trait
+<code>is_uniquely_represented</code> to assert that an object of a given type
+can be hashed by hashing its object representation. It states that
 <code>is_uniquely_represented</code> can only be true for types which have no
-padding, but intentionally avoids adding a type trait check to keep the
-proposal a "pure library" proposal.
+padding bits, but intentionally avoids adding a type trait to check this to keep
+the proposal a "pure library" proposal.
 </p>
 
 <p>It is not possible for users to portably assert that a type has the
@@ -176,14 +177,13 @@ representation.</li>
 <p>1 can be checked via a static assert, however this is verbose.</p>
 
 <p>2 and 3 can only be checked by reading the documentation for your
-implementation, thus limiting portability. Although no known implementation
-fails either of these.</p>
+implementation, thus limiting portability.</p>
 
 <h3 id="motive-bitfields">Bitfields</h3>
 <pre><code class="highlight"><span class="k">struct</span> <span class="n">Bitfields</span> <span class="p">{</span>
-  <span class="kt">unsigned</span> <span class="kt">char</span> <span class="nl">A</span> <span class="p">:</span> <span class="mi">4</span><span class="p">;</span>
-  <span class="kt">unsigned</span> <span class="kt">char</span> <span class="nl">B</span> <span class="p">:</span> <span class="mi">4</span><span class="p">;</span>
-  <span class="kt">unsigned</span> <span class="kt">short</span> <span class="nl">C</span> <span class="p">:</span> <span class="mi">8</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">A</span> <span class="p">:</span> <span class="mi">4</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">B</span> <span class="p">:</span> <span class="mi">4</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">C</span> <span class="p">:</span> <span class="mi">8</span><span class="p">;</span>
 <span class="p">};</span>
 </code></pre>
 
@@ -193,7 +193,7 @@ C++. This can also only be checked by taking a look at the docs.</p>
 </section>
 
 <section>
-<h2 id="sgfsesgesgsegsegsegsgsegsesgesegsegsegsegesg">Stuff</h2>
+<h2 id="design">Design Implications</h2>
 <p>The proposed wording for this trait is: </p>
 <blockquote>
 <p>A <var>contiguous-layout</var> type is a <var>standard-layout</var> type for
@@ -202,30 +202,30 @@ representation (3.9).
 </p>
 </blockquote>
 <p>This means that a standard-layout type is a contiguous-layout type unless
-there exists two object representation bit patterns of the type for which there
-exists no well defined program operating only on value types to observe the
-difference.</p>
+there exist two object representation bit patterns of the type for which there
+exists no well defined program operating only on value representations to
+observe the difference.</p>
 
-<h3 id="sgfsesgesgsegsegsegsgsegsesgesegsegsegsegesg-floats">Floats</h3>
+<h3 id="design-floats">Floats</h3>
 <p>Floating point values may compare equal even when they have different object
 representations. However this does not preclude them from having
 contiguous-layout types, as equality is not the only way to observe the
 difference between floating point values. The implementation may provide enough
-observation tools to observe the full state of the value.</p>
+tools to observe the full state of the value.</p>
 
 <p>It is implementation defined if floating point types are contiguous-layout.
 </p>
 
-<h3 id="sgfsesgesgsegsegsegsgsegsesgesegsegsegsegesg-unions">Unions</h3>
+<h3 id="design-unions">Unions</h3>
 <p>Unions with members which are all the same size and are all contiguous-layout
 types are also obvious candidates for contiguous-layout types. However, unions
 with members of different sizes present a problem, as the existence of padding
-bytes depends on the runtime active member.</p>
+bits depends on the active member.</p>
 
-<p>For incompatible union members, implementations are allowed to omit copying
-the entire object representation of a union if it knows the active member. It is
-completely reasonable for an implementation to do this if a member was just
-assigned.</p>
+<p>For union members which do not share a common initial sequence,
+implementations are allowed to omit copying the entire object representation of
+a union if it knows the active member. It is completely reasonable for an
+implementation to do this if a member was just assigned.</p>
 
 <p>It is implementation defined if union types are contiguous-layout.</p>
 </section>
@@ -245,14 +245,14 @@ representation (3.9).
 </p>
 </blockquote>
 
-<h3>20.9.2 Header <code>&lt;type_traits&gt;</code> synopsis [meta.type.synop]</h3>
+<h3>20.10.2 Header <code>&lt;type_traits&gt;</code> synopsis [meta.type.synop]</h3>
 <p>Add to synopsis.
 </p>
 <blockquote class="stdins">
 <code>template &lt;class T&gt; struct is_contiguous_layout;</code>
 </blockquote>
 
-<h3>20.9.4.3 Type properties [meta.unary.prop]</h3>
+<h3>20.10.4.3 Type properties [meta.unary.prop]</h3>
 <p>Add to table 49 - Type property predicates.
 </p>
 <blockquote class="stdins">
